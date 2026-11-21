@@ -13,6 +13,11 @@ const COLORS = [
   '#e57373', // Z - red
   '#7986cb', // J - indigo
   '#ffb74d', // L - orange
+  '#f06292', // + - pink
+  '#4db6ac', // U - teal
+  '#a1887f', // Y - brown
+  '#fff176', // single 1x1 - light yellow
+  '#90a4ae', // hollow 3x3 - grey
 ];
 
 const PIECES = [
@@ -24,7 +29,16 @@ const PIECES = [
   [[5,5,0],[0,5,5],[0,0,0]],                  // Z
   [[6,0,0],[6,6,6],[0,0,0]],                  // J
   [[0,0,7],[7,7,7],[0,0,0]],                  // L
+  [[0,8,0],[8,8,8],[0,8,0]],                  // + (pentomino)
+  [[9,0,9],[9,9,9],[0,0,0]],                  // U (pentomino)
+  [[0,10,0,0],[10,10,10,10],[0,0,0,0],[0,0,0,0]], // Y (pentomino)
+  [[11]],                                      // single (reward after a Tetris)
+  [[12,12,12],[12,0,12],[12,12,12]],          // hollow 3x3 (challenge)
 ];
+
+const SPECIAL_CHANCE = 0.12;             // probability that a special piece appears
+const SPECIAL_TYPES = [8, 9, 10, 12];    // +, U, Y, hollow 3x3
+const SINGLE_TYPE = 11;
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
@@ -46,8 +60,13 @@ function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
 }
 
-function randomPiece() {
-  const type = Math.floor(Math.random() * 7) + 1;
+function randomPiece(forcedType) {
+  let type = forcedType;
+  if (!type) {
+    type = Math.random() < SPECIAL_CHANCE
+      ? SPECIAL_TYPES[Math.floor(Math.random() * SPECIAL_TYPES.length)]
+      : Math.floor(Math.random() * 7) + 1;
+  }
   const shape = PIECES[type].map(row => [...row]);
   return { type, shape, x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2), y: 0 };
 }
@@ -108,6 +127,8 @@ function clearLines() {
     score += (LINE_SCORES[cleared] || 0) * level;
     level = Math.floor(lines / 10) + 1;
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+    // Tetris reward: the next piece is a 1x1 single
+    if (cleared === 4) next = randomPiece(SINGLE_TYPE);
     updateHUD();
   }
 }
